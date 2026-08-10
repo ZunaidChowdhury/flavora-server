@@ -4,6 +4,7 @@ import prisma from "../lib/prisma";
 import { HttpError } from "../utils/httpError";
 import { verifyToken } from "../middlewares/verifyToken";
 import { verifyUser } from "../middlewares/verifyUser";
+import { verifyAdmin } from "../middlewares/verifyAdmin";
 import {
   createRecipe,
   listRecipes,
@@ -11,8 +12,10 @@ import {
   listMyRecipes,
   toggleFavorite,
   listMyFavorites,
+  listAllRecipesAdmin,
   updateRecipe,
   updateVisibility,
+  updateAdminVisibility,
   deleteRecipe,
 } from "../services/recipe/recipe.controller";
 
@@ -35,6 +38,7 @@ router.post("/", verifyToken, createRecipe);
 router.get("/", listRecipes);
 router.get("/mine", verifyToken, listMyRecipes);
 router.get("/favorites/mine", verifyToken, listMyFavorites);
+router.get("/admin", verifyToken, verifyAdmin, listAllRecipesAdmin);
 router.post("/:id/favorite", verifyToken, toggleFavorite);
 router.get("/:id", getRecipe);
 router.put("/:id", verifyToken, verifyUser(resolveRecipeOwner), updateRecipe);
@@ -43,6 +47,12 @@ router.put(
   verifyToken,
   verifyUser(resolveRecipeOwner),
   updateVisibility
+);
+router.put(
+  "/:id/admin-visibility",
+  verifyToken,
+  verifyAdmin,
+  updateAdminVisibility
 );
 router.delete(
   "/:id",
