@@ -8,6 +8,8 @@ import {
   listMyRecipes as listMyRecipesService,
   updateRecipe as updateRecipeService,
   updateRecipeVisibility as updateRecipeVisibilityService,
+  toggleFavorite as toggleFavoriteService,
+  listFavoriteRecipes as listFavoriteRecipesService,
   softDeleteRecipe as softDeleteRecipeService,
 } from "./recipe.service";
 
@@ -195,6 +197,45 @@ export const listMyRecipes = async (
       statusCode: 200,
       success: true,
       message: "My recipes retrieved successfully",
+      data,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const toggleFavorite = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const data = await toggleFavoriteService(
+      req.user!.id,
+      String(req.params.id)
+    );
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Favorite toggled successfully",
+      data,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const listMyFavorites = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const data = await listFavoriteRecipesService(req.user!.id);
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Favorites retrieved successfully",
       data,
     });
   } catch (err) {

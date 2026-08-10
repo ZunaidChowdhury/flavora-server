@@ -9,6 +9,8 @@ import {
   listRecipes,
   getRecipe,
   listMyRecipes,
+  toggleFavorite,
+  listMyFavorites,
   updateRecipe,
   updateVisibility,
   deleteRecipe,
@@ -32,6 +34,8 @@ const router = Router();
 router.post("/", verifyToken, createRecipe);
 router.get("/", listRecipes);
 router.get("/mine", verifyToken, listMyRecipes);
+router.get("/favorites/mine", verifyToken, listMyFavorites);
+router.post("/:id/favorite", verifyToken, toggleFavorite);
 router.get("/:id", getRecipe);
 router.put("/:id", verifyToken, verifyUser(resolveRecipeOwner), updateRecipe);
 router.put(
