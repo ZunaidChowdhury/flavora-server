@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
+import errorHandler from "./middlewares/errorHandler";
 
 const app = express();
 
@@ -20,5 +21,7 @@ app.get("/api/health", (_req, res) => {
     data: null,
   });
 });
+
+app.use(errorHandler);
 
 export default app;
