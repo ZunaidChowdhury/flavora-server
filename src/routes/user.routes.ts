@@ -5,7 +5,13 @@ import { HttpError } from "../utils/httpError";
 import { verifyToken } from "../middlewares/verifyToken";
 import { verifyAdmin } from "../middlewares/verifyAdmin";
 import { verifyUser } from "../middlewares/verifyUser";
-import { listUsers, getUser } from "../services/user/user.controller";
+import {
+  listUsers,
+  getUser,
+  updateUser,
+  updateRole,
+  deleteUser,
+} from "../services/user/user.controller";
 
 const resolveUserOwner = async (req: Request): Promise<string | null> => {
   const target = await prisma.user.findFirst({
@@ -24,5 +30,8 @@ const router = Router();
 
 router.get("/", verifyToken, verifyAdmin, listUsers);
 router.get("/:id", verifyToken, verifyUser(resolveUserOwner), getUser);
+router.put("/:id", verifyToken, verifyUser(resolveUserOwner), updateUser);
+router.put("/:id/role", verifyToken, verifyAdmin, updateRole);
+router.delete("/:id", verifyToken, verifyAdmin, deleteUser);
 
 export default router;

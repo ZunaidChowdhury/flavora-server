@@ -5,6 +5,9 @@ import {
   loginUser,
   listUsers as listUsersService,
   getUserById,
+  updateProfile,
+  updateUserRole,
+  softDeleteUser,
 } from "./user.service";
 
 export const register = async (
@@ -100,6 +103,76 @@ export const getUser = async (
       success: true,
       message: "User retrieved successfully",
       data,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const data = await updateProfile(String(req.params.id), req.body);
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Profile updated successfully",
+      data,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateRole = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const role = req.body?.role;
+
+    if (role !== "USER" && role !== "ADMIN") {
+      sendResponse(res, {
+        statusCode: 400,
+        success: false,
+        message: "role must be 'USER' or 'ADMIN'",
+        data: null,
+      });
+      return;
+    }
+
+    const data = await updateUserRole(
+      String(req.params.id),
+      role,
+      req.user!.id
+    );
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "User role updated successfully",
+      data,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    await softDeleteUser(String(req.params.id));
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "User deleted successfully",
+      data: null,
     });
   } catch (err) {
     next(err);

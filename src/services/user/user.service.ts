@@ -104,3 +104,80 @@ export const getUserById = async (id: string) => {
 
   return user;
 };
+
+export const updateProfile = async (id: string, data: { name?: string }) => {
+  const existing = await prisma.user.findFirst({
+    where: { id, isDeleted: false },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    throw new HttpError(404, "User not found");
+  }
+
+  const allowed: { name?: string } = {};
+  if (typeof data.name === "string" && data.name.trim()) {
+    allowed.name = data.name.trim();
+  }
+
+  const user = await prisma.user.update({
+    where: { id },
+    data: allowed,
+    select: safeUserSelect,
+  });
+
+  return user;
+};
+
+export const updateUserRole = async (
+  id: string,
+  role: "USER" | "ADMIN",
+  actorId: string
+) => {
+  const target = await prisma.user.findFirst({
+    where: { id, isDeleted: false },
+  });
+
+  if (!target) {
+    throw new HttpError(404, "User not found");
+  }
+
+  if (target.role === "ADMIN" && role === "USER") {
+    const adminCount = await prisma.user.count({
+      where: { role: "ADMIN", isDeleted: false },
+    });
+    if (adminCount <= 1) {
+      throw new HttpError(400, "Cannot demote the last admin");
+    }
+  }
+
+  if (target.id === actorId && role !== "ADMIN") {
+    throw new HttpError(400, "Admin cannot demote themselves");
+  }
+
+  const user = await prisma.user.update({
+    where: { id },
+    data: { role },
+    select: safeUserSelect,
+  });
+
+  return user;
+};
+
+export const softDeleteUser = async (id: string) => {
+  const target = await prisma.user.findFirst({
+    where: { id, isDeleted: false },
+    select: { id: true },
+  });
+
+  if (!target) {
+    throw new HttpError(404, "User not found");
+  }
+
+  await prisma.user.update({
+    where: { id },
+    data: { isDeleted: true, status: "ARCHIVED" },
+  });
+
+  return null;
+};
