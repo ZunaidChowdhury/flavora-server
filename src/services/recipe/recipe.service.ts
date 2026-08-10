@@ -119,3 +119,100 @@ export const listMyRecipes = async (userId: string) => {
 
   return recipes;
 };
+
+export const updateRecipe = async (
+  id: string,
+  data: {
+    title?: string;
+    description?: string;
+    ingredients?: string[];
+    instructions?: string;
+    image?: string | null;
+    categoryId?: string;
+  }
+) => {
+  const existing = await prisma.recipe.findFirst({
+    where: { id, isDeleted: false },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    throw new HttpError(404, "Recipe not found");
+  }
+
+  if (data.categoryId !== undefined) {
+    const category = await prisma.category.findFirst({
+      where: { id: data.categoryId, isDeleted: false },
+      select: { id: true },
+    });
+    if (!category) {
+      throw new HttpError(404, "Category not found");
+    }
+  }
+
+  const recipe = await prisma.recipe.update({
+    where: { id },
+    data: {
+      ...(data.title !== undefined ? { title: data.title } : {}),
+      ...(data.description !== undefined ? { description: data.description } : {}),
+      ...(data.ingredients !== undefined
+        ? { ingredients: data.ingredients }
+        : {}),
+      ...(data.instructions !== undefined
+        ? { instructions: data.instructions }
+        : {}),
+      ...(data.image !== undefined ? { image: data.image } : {}),
+      ...(data.categoryId !== undefined ? { categoryId: data.categoryId } : {}),
+    },
+    select: safeRecipeSelect,
+  });
+
+  return recipe;
+};
+
+export const updateRecipeVisibility = async (
+  id: string,
+  visibility: "PUBLIC" | "PRIVATE"
+) => {
+  const existing = await prisma.recipe.findFirst({
+    where: { id, isDeleted: false },
+    select: { id: true, isUnpublishedByAdmin: true },
+  });
+
+  if (!existing) {
+    throw new HttpError(404, "Recipe not found");
+  }
+
+  if (existing.isUnpublishedByAdmin) {
+    throw new HttpError(
+      403,
+      "This recipe was unpublished by an admin and cannot change visibility"
+    );
+  }
+
+  const recipe = await prisma.recipe.update({
+    where: { id },
+    data: { visibility },
+    select: safeRecipeSelect,
+  });
+
+  return recipe;
+};
+
+export const softDeleteRecipe = async (id: string) => {
+  const existing = await prisma.recipe.findFirst({
+    where: { id, isDeleted: false },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    throw new HttpError(404, "Recipe not found");
+  }
+
+  await prisma.recipe.update({
+    where: { id },
+    data: { isDeleted: true },
+  });
+
+  return null;
+};

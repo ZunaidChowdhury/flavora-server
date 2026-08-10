@@ -6,7 +6,18 @@ import {
   listPublicRecipes as listPublicRecipesService,
   getRecipeById as getRecipeByIdService,
   listMyRecipes as listMyRecipesService,
+  updateRecipe as updateRecipeService,
+  updateRecipeVisibility as updateRecipeVisibilityService,
+  softDeleteRecipe as softDeleteRecipeService,
 } from "./recipe.service";
+
+const ingredientsValid = (ingredients: unknown): boolean =>
+  Array.isArray(ingredients) &&
+  ingredients.length > 0 &&
+  ingredients.every(
+    (ingredient) =>
+      typeof ingredient === "string" && ingredient.trim().length > 0
+  );
 
 export const createRecipe = async (
   req: Request,
@@ -23,14 +34,6 @@ export const createRecipe = async (
       image,
     } = req.body ?? {};
 
-    const ingredientsValid =
-      Array.isArray(ingredients) &&
-      ingredients.length > 0 &&
-      ingredients.every(
-        (ingredient) =>
-          typeof ingredient === "string" && ingredient.trim().length > 0
-      );
-
     if (
       !title ||
       !title.trim() ||
@@ -38,7 +41,7 @@ export const createRecipe = async (
       !description.trim() ||
       !instructions ||
       !instructions.trim() ||
-      !ingredientsValid ||
+      !ingredientsValid(ingredients) ||
       !categoryId
     ) {
       sendResponse(res, {
@@ -172,6 +175,174 @@ export const listMyRecipes = async (
       success: true,
       message: "My recipes retrieved successfully",
       data,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateRecipe = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const {
+      title,
+      description,
+      ingredients,
+      instructions,
+      categoryId,
+      image,
+    } = req.body ?? {};
+
+    const hasUpdate =
+      title !== undefined ||
+      description !== undefined ||
+      ingredients !== undefined ||
+      instructions !== undefined ||
+      categoryId !== undefined ||
+      image !== undefined;
+
+    if (!hasUpdate) {
+      sendResponse(res, {
+        statusCode: 400,
+        success: false,
+        message: "At least one field to update is required",
+        data: null,
+      });
+      return;
+    }
+
+    if (title !== undefined && !title.trim()) {
+      sendResponse(res, {
+        statusCode: 400,
+        success: false,
+        message: "title cannot be empty",
+        data: null,
+      });
+      return;
+    }
+
+    if (description !== undefined && !description.trim()) {
+      sendResponse(res, {
+        statusCode: 400,
+        success: false,
+        message: "description cannot be empty",
+        data: null,
+      });
+      return;
+    }
+
+    if (ingredients !== undefined && !ingredientsValid(ingredients)) {
+      sendResponse(res, {
+        statusCode: 400,
+        success: false,
+        message: "ingredients must be a non-empty array of strings",
+        data: null,
+      });
+      return;
+    }
+
+    if (instructions !== undefined && !instructions.trim()) {
+      sendResponse(res, {
+        statusCode: 400,
+        success: false,
+        message: "instructions cannot be empty",
+        data: null,
+      });
+      return;
+    }
+
+    if (categoryId !== undefined && typeof categoryId !== "string") {
+      sendResponse(res, {
+        statusCode: 400,
+        success: false,
+        message: "categoryId must be a string",
+        data: null,
+      });
+      return;
+    }
+
+    if (image !== undefined && image !== null && typeof image !== "string") {
+      sendResponse(res, {
+        statusCode: 400,
+        success: false,
+        message: "image must be a string",
+        data: null,
+      });
+      return;
+    }
+
+    const data = await updateRecipeService(String(req.params.id), {
+      ...(title !== undefined ? { title: title.trim() } : {}),
+      ...(description !== undefined ? { description: description.trim() } : {}),
+      ...(ingredients !== undefined
+        ? { ingredients: ingredients.map((i: string) => i.trim()) }
+        : {}),
+      ...(instructions !== undefined
+        ? { instructions: instructions.trim() }
+        : {}),
+      ...(image !== undefined ? { image } : {}),
+      ...(categoryId !== undefined ? { categoryId } : {}),
+    });
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Recipe updated successfully",
+      data,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateVisibility = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const visibility = req.body?.visibility;
+
+    if (visibility !== "PUBLIC" && visibility !== "PRIVATE") {
+      sendResponse(res, {
+        statusCode: 400,
+        success: false,
+        message: "visibility must be 'PUBLIC' or 'PRIVATE'",
+        data: null,
+      });
+      return;
+    }
+
+    const data = await updateRecipeVisibilityService(
+      String(req.params.id),
+      visibility
+    );
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Recipe visibility updated successfully",
+      data,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const deleteRecipe = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    await softDeleteRecipeService(String(req.params.id));
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Recipe deleted successfully",
+      data: null,
     });
   } catch (err) {
     next(err);
