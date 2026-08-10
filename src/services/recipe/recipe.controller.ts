@@ -93,6 +93,11 @@ export const listRecipes = async (
   try {
     const page = req.query.page ? Number(req.query.page) : undefined;
     const limit = req.query.limit ? Number(req.query.limit) : undefined;
+    const search = req.query.search ? String(req.query.search) : undefined;
+    const categoryId = req.query.categoryId
+      ? String(req.query.categoryId)
+      : undefined;
+    const sortRaw = req.query.sort ? String(req.query.sort) : undefined;
 
     if (
       (page !== undefined && (Number.isNaN(page) || page < 1)) ||
@@ -107,7 +112,23 @@ export const listRecipes = async (
       return;
     }
 
-    const data = await listPublicRecipesService({ page, limit });
+    if (sortRaw !== undefined && sortRaw !== "newest" && sortRaw !== "oldest") {
+      sendResponse(res, {
+        statusCode: 400,
+        success: false,
+        message: "sort must be 'newest' or 'oldest'",
+        data: null,
+      });
+      return;
+    }
+
+    const data = await listPublicRecipesService({
+      page,
+      limit,
+      search,
+      categoryId,
+      sort: sortRaw === "oldest" || sortRaw === "newest" ? sortRaw : undefined,
+    });
     sendResponse(res, {
       statusCode: 200,
       success: true,
