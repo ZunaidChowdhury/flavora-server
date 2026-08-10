@@ -1,6 +1,11 @@
 import type { NextFunction, Request, Response } from "express";
 import { sendResponse } from "../../utils/sendResponse";
-import { registerUser, loginUser } from "./user.service";
+import {
+  registerUser,
+  loginUser,
+  listUsers as listUsersService,
+  getUserById,
+} from "./user.service";
 
 export const register = async (
   req: Request,
@@ -55,6 +60,45 @@ export const login = async (
       statusCode: 200,
       success: true,
       message: "Login successful",
+      data,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const listUsers = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const page = req.query.page ? Number(req.query.page) : undefined;
+    const limit = req.query.limit ? Number(req.query.limit) : undefined;
+
+    const data = await listUsersService({ page, limit });
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Users retrieved successfully",
+      data,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getUser = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const data = await getUserById(String(req.params.id));
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "User retrieved successfully",
       data,
     });
   } catch (err) {

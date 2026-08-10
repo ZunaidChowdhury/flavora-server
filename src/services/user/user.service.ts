@@ -70,3 +70,37 @@ export const loginUser = async (data: { email: string; password: string }) => {
 
   return { token, user: synced };
 };
+
+export const listUsers = async (query: {
+  page?: number;
+  limit?: number;
+}) => {
+  const page = Math.max(1, query.page ?? 1);
+  const limit = Math.min(100, Math.max(1, query.limit ?? 10));
+
+  const [users, total] = await Promise.all([
+    prisma.user.findMany({
+      where: { isDeleted: false },
+      select: safeUserSelect,
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.user.count({ where: { isDeleted: false } }),
+  ]);
+
+  return { users, total, page, limit };
+};
+
+export const getUserById = async (id: string) => {
+  const user = await prisma.user.findFirst({
+    where: { id, isDeleted: false },
+    select: safeUserSelect,
+  });
+
+  if (!user) {
+    throw new HttpError(404, "User not found");
+  }
+
+  return user;
+};
