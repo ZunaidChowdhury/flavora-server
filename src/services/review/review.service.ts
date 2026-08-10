@@ -61,3 +61,44 @@ export const getReviewById = async (id: string) => {
 
   return review;
 };
+
+export const updateReview = async (
+  id: string,
+  data: { rating?: number; comment?: string }
+) => {
+  const existing = await prisma.review.findFirst({
+    where: { id, isDeleted: false },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    throw new HttpError(404, "Review not found");
+  }
+
+  return prisma.review.update({
+    where: { id },
+    data: {
+      ...(data.rating !== undefined ? { rating: data.rating } : {}),
+      ...(data.comment !== undefined ? { comment: data.comment } : {}),
+    },
+    select: safeReviewSelect,
+  });
+};
+
+export const softDeleteReview = async (id: string) => {
+  const existing = await prisma.review.findFirst({
+    where: { id, isDeleted: false },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    throw new HttpError(404, "Review not found");
+  }
+
+  await prisma.review.update({
+    where: { id },
+    data: { isDeleted: true },
+  });
+
+  return null;
+};
