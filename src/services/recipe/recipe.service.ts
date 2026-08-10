@@ -257,6 +257,52 @@ export const listFavoriteRecipes = async (userId: string) => {
   return favorites.map((f) => f.recipe);
 };
 
+export const listAllRecipes = async (query: {
+  page?: number;
+  limit?: number;
+}) => {
+  const page = Math.max(1, query.page ?? 1);
+  const limit = Math.min(100, Math.max(1, query.limit ?? 10));
+
+  const where: Prisma.RecipeWhereInput = { isDeleted: false };
+
+  const [recipes, total] = await Promise.all([
+    prisma.recipe.findMany({
+      where,
+      select: {
+        ...safeRecipeSelect,
+        _count: { select: { reviews: true, favoritedBy: true } },
+      },
+      skip: (page - 1) * limit,
+      take: limit,
+      orderBy: { createdAt: "desc" },
+    }),
+    prisma.recipe.count({ where }),
+  ]);
+
+  return { recipes, total, page, limit };
+};
+
+export const updateAdminVisibility = async (
+  id: string,
+  isUnpublishedByAdmin: boolean
+) => {
+  const existing = await prisma.recipe.findFirst({
+    where: { id, isDeleted: false },
+    select: { id: true },
+  });
+
+  if (!existing) {
+    throw new HttpError(404, "Recipe not found");
+  }
+
+  return prisma.recipe.update({
+    where: { id },
+    data: { isUnpublishedByAdmin },
+    select: safeRecipeSelect,
+  });
+};
+
 export const softDeleteRecipe = async (id: string) => {
   const existing = await prisma.recipe.findFirst({
     where: { id, isDeleted: false },

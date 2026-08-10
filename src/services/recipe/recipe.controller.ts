@@ -10,6 +10,8 @@ import {
   updateRecipeVisibility as updateRecipeVisibilityService,
   toggleFavorite as toggleFavoriteService,
   listFavoriteRecipes as listFavoriteRecipesService,
+  listAllRecipes as listAllRecipesService,
+  updateAdminVisibility as updateAdminVisibilityService,
   softDeleteRecipe as softDeleteRecipeService,
 } from "./recipe.service";
 
@@ -236,6 +238,76 @@ export const listMyFavorites = async (
       statusCode: 200,
       success: true,
       message: "Favorites retrieved successfully",
+      data,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const listAllRecipesAdmin = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const page = req.query.page ? Number(req.query.page) : undefined;
+    const limit = req.query.limit ? Number(req.query.limit) : undefined;
+
+    if (
+      (page !== undefined && (Number.isNaN(page) || page < 1)) ||
+      (limit !== undefined && (Number.isNaN(limit) || limit < 1))
+    ) {
+      sendResponse(res, {
+        statusCode: 400,
+        success: false,
+        message: "page and limit must be positive integers",
+        data: null,
+      });
+      return;
+    }
+
+    const data = await listAllRecipesService({ page, limit });
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "All recipes retrieved successfully",
+      data,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateAdminVisibility = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { isUnpublishedByAdmin } = req.body ?? {};
+
+    if (typeof isUnpublishedByAdmin !== "boolean") {
+      sendResponse(res, {
+        statusCode: 400,
+        success: false,
+        message: "isUnpublishedByAdmin must be a boolean",
+        data: null,
+      });
+      return;
+    }
+
+    const data = await updateAdminVisibilityService(
+      String(req.params.id),
+      isUnpublishedByAdmin
+    );
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: isUnpublishedByAdmin
+        ? "Recipe unpublished by admin"
+        : "Recipe republished",
       data,
     });
   } catch (err) {
