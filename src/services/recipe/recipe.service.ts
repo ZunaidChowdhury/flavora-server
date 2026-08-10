@@ -211,6 +211,52 @@ export const updateRecipeVisibility = async (
   return recipe;
 };
 
+export const toggleFavorite = async (userId: string, recipeId: string) => {
+  const recipe = await prisma.recipe.findFirst({
+    where: { id: recipeId, isDeleted: false },
+    select: { id: true },
+  });
+
+  if (!recipe) {
+    throw new HttpError(404, "Recipe not found");
+  }
+
+  const existing = await prisma.favorite.findUnique({
+    where: { userId_recipeId: { userId, recipeId } },
+    select: { id: true },
+  });
+
+  if (existing) {
+    await prisma.favorite.delete({ where: { id: existing.id } });
+  } else {
+    await prisma.favorite.create({ data: { userId, recipeId } });
+  }
+
+  return { isFavorited: !existing };
+};
+
+export const isFavorited = async (userId: string, recipeId: string) => {
+  const favorite = await prisma.favorite.findUnique({
+    where: { userId_recipeId: { userId, recipeId } },
+    select: { id: true },
+  });
+  return Boolean(favorite);
+};
+
+export const listFavoriteRecipes = async (userId: string) => {
+  const favorites = await prisma.favorite.findMany({
+    where: { userId, recipe: { isDeleted: false } },
+    select: {
+      recipe: {
+        select: safeRecipeSelect,
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return favorites.map((f) => f.recipe);
+};
+
 export const softDeleteRecipe = async (id: string) => {
   const existing = await prisma.recipe.findFirst({
     where: { id, isDeleted: false },
