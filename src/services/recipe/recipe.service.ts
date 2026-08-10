@@ -77,11 +77,23 @@ export const createRecipe = async (data: {
 export const listPublicRecipes = async (query: {
   page?: number;
   limit?: number;
+  search?: string;
+  categoryId?: string;
+  sort?: "newest" | "oldest";
 }) => {
   const page = Math.max(1, query.page ?? 1);
   const limit = Math.min(100, Math.max(1, query.limit ?? 10));
 
-  const where = { ...publicRecipeWhere } satisfies Prisma.RecipeWhereInput;
+  const where: Prisma.RecipeWhereInput = {
+    ...publicRecipeWhere,
+    ...(query.search?.trim()
+      ? { title: { contains: query.search.trim(), mode: "insensitive" } }
+      : {}),
+    ...(query.categoryId ? { categoryId: query.categoryId } : {}),
+  };
+
+  const orderBy: Prisma.RecipeOrderByWithRelationInput =
+    query.sort === "oldest" ? { createdAt: "asc" } : { createdAt: "desc" };
 
   const [recipes, total] = await Promise.all([
     prisma.recipe.findMany({
@@ -89,7 +101,7 @@ export const listPublicRecipes = async (query: {
       select: safeRecipeSelect,
       skip: (page - 1) * limit,
       take: limit,
-      orderBy: { createdAt: "desc" },
+      orderBy,
     }),
     prisma.recipe.count({ where }),
   ]);
