@@ -1,8 +1,11 @@
 import type { NextFunction, Request, Response } from "express";
 import { sendResponse } from "../../utils/sendResponse";
+import { verifyJwt, type JwtPayload } from "../../utils/jwt";
 import {
   createRecipe as createRecipeService,
   listPublicRecipes as listPublicRecipesService,
+  getRecipeById as getRecipeByIdService,
+  listMyRecipes as listMyRecipesService,
 } from "./recipe.service";
 
 export const createRecipe = async (
@@ -106,6 +109,68 @@ export const listRecipes = async (
       statusCode: 200,
       success: true,
       message: "Recipes retrieved successfully",
+      data,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getRecipe = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const recipe = await getRecipeByIdService(String(req.params.id));
+
+    let user: JwtPayload | undefined;
+    const header = req.headers.authorization;
+    if (header?.startsWith("Bearer ")) {
+      try {
+        user = verifyJwt(header.slice("Bearer ".length));
+      } catch {
+        user = undefined;
+      }
+    }
+
+    const isPublic =
+      recipe.visibility === "PUBLIC" && !recipe.isUnpublishedByAdmin;
+    const isOwner = user?.id === recipe.authorId;
+    const isAdmin = user?.role === "ADMIN";
+
+    if (!isPublic && !isOwner && !isAdmin) {
+      sendResponse(res, {
+        statusCode: 403,
+        success: false,
+        message: "Forbidden",
+        data: null,
+      });
+      return;
+    }
+
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Recipe retrieved successfully",
+      data: recipe,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const listMyRecipes = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const data = await listMyRecipesService(req.user!.id);
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "My recipes retrieved successfully",
       data,
     });
   } catch (err) {

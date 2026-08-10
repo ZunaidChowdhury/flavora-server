@@ -11,6 +11,7 @@ export const safeRecipeSelect = {
   visibility: true,
   isUnpublishedByAdmin: true,
   status: true,
+  authorId: true,
   createdAt: true,
   updatedAt: true,
   author: { select: { id: true, name: true, email: true } },
@@ -22,6 +23,22 @@ export const publicRecipeWhere = {
   visibility: "PUBLIC",
   isUnpublishedByAdmin: false,
 } satisfies Prisma.RecipeWhereInput;
+
+export const safeRecipeDetailSelect = {
+  ...safeRecipeSelect,
+  reviews: {
+    where: { isDeleted: false },
+    select: {
+      id: true,
+      rating: true,
+      comment: true,
+      createdAt: true,
+      updatedAt: true,
+      user: { select: { id: true, name: true } },
+    },
+    orderBy: { createdAt: "desc" },
+  },
+} satisfies Prisma.RecipeSelect;
 
 export const createRecipe = async (data: {
   title: string;
@@ -78,4 +95,27 @@ export const listPublicRecipes = async (query: {
   ]);
 
   return { recipes, total, page, limit };
+};
+
+export const getRecipeById = async (id: string) => {
+  const recipe = await prisma.recipe.findFirst({
+    where: { id, isDeleted: false },
+    select: safeRecipeDetailSelect,
+  });
+
+  if (!recipe) {
+    throw new HttpError(404, "Recipe not found");
+  }
+
+  return recipe;
+};
+
+export const listMyRecipes = async (userId: string) => {
+  const recipes = await prisma.recipe.findMany({
+    where: { authorId: userId, isDeleted: false },
+    select: safeRecipeSelect,
+    orderBy: { createdAt: "desc" },
+  });
+
+  return recipes;
 };
