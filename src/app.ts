@@ -2,6 +2,7 @@ import express from "express";
 import cors from "cors";
 import "dotenv/config";
 import errorHandler from "./middlewares/errorHandler";
+import authRoutes from "./routes/auth.routes";
 
 const app = express();
 
@@ -21,6 +22,8 @@ app.get("/api/health", (_req, res) => {
     data: null,
   });
 });
+
+app.use("/api/auth", authRoutes);
 
 app.use(errorHandler);
 
