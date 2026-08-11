@@ -7,6 +7,7 @@ export const safeUserSelect = {
   id: true,
   name: true,
   email: true,
+  image: true,
   role: true,
   status: true,
   isDeleted: true,
@@ -18,6 +19,7 @@ export const registerUser = async (data: {
   name: string;
   email: string;
   password: string;
+  image?: string;
 }) => {
   const email = data.email.toLowerCase();
 
@@ -34,6 +36,7 @@ export const registerUser = async (data: {
       name: data.name,
       email,
       password: await hashPassword(data.password),
+      image: data.image,
       role,
     },
     select: safeUserSelect,
