@@ -16,7 +16,7 @@ export const register = async (
   next: NextFunction
 ): Promise<void> => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, image } = req.body;
 
     if (!name || !email || !password) {
       sendResponse(res, {
@@ -28,7 +28,7 @@ export const register = async (
       return;
     }
 
-    const data = await registerUser({ name, email, password });
+    const data = await registerUser({ name, email, password, image });
     sendResponse(res, {
       statusCode: 201,
       success: true,
