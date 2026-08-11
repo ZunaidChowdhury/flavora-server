@@ -285,6 +285,28 @@ List ALL non-deleted recipes regardless of visibility or unpublished state, with
 
 **Errors:** `401` · `403` non-admin.
 
+### `GET /api/recipes/admin/stats` — [ADMIN]
+
+Aggregate counts for the admin dashboard. Requires `verifyToken` + `verifyAdmin`.
+
+**Success `200`:**
+
+```json
+{
+  "success": true,
+  "message": "Admin stats retrieved successfully",
+  "data": {
+    "totalUsers": 12,
+    "totalRecipes": 34,
+    "totalReviews": 56,
+    "totalCategories": 5,
+    "recipesByCategory": [{ "name": "Dessert", "count": 8 }]
+  }
+}
+```
+
+**Errors:** `401` · `403` non-admin.
+
 ### `PUT /api/recipes/:id` — [AUTH, owner]
 
 Update recipe content fields. Only the owner (or admin) may edit.
