@@ -13,6 +13,7 @@ import {
   toggleFavorite,
   listMyFavorites,
   listAllRecipesAdmin,
+  getAdminStats,
   updateRecipe,
   updateVisibility,
   updateAdminVisibility,
@@ -38,6 +39,7 @@ router.post("/", verifyToken, createRecipe);
 router.get("/", listRecipes);
 router.get("/mine", verifyToken, listMyRecipes);
 router.get("/favorites/mine", verifyToken, listMyFavorites);
+router.get("/admin/stats", verifyToken, verifyAdmin, getAdminStats);
 router.get("/admin", verifyToken, verifyAdmin, listAllRecipesAdmin);
 router.post("/:id/favorite", verifyToken, toggleFavorite);
 router.get("/:id", getRecipe);

@@ -12,6 +12,7 @@ import {
   listFavoriteRecipes as listFavoriteRecipesService,
   listAllRecipes as listAllRecipesService,
   updateAdminVisibility as updateAdminVisibilityService,
+  getAdminStats as getAdminStatsService,
   softDeleteRecipe as softDeleteRecipeService,
 } from "./recipe.service";
 
@@ -272,6 +273,24 @@ export const listAllRecipesAdmin = async (
       statusCode: 200,
       success: true,
       message: "All recipes retrieved successfully",
+      data,
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const getAdminStats = async (
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const data = await getAdminStatsService();
+    sendResponse(res, {
+      statusCode: 200,
+      success: true,
+      message: "Admin stats retrieved successfully",
       data,
     });
   } catch (err) {

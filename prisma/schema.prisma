@@ -7,37 +7,20 @@ datasource db {
   provider = "postgresql"
 }
 
-enum Role {
-  USER
-  ADMIN
-}
-
-enum Status {
-  ACTIVE
-  INACTIVE
-  ARCHIVED
-}
-
-enum Visibility {
-  PUBLIC
-  PRIVATE
-}
-
 model User {
-  id        String   @id @default(uuid())
+  id        String     @id @default(uuid())
   name      String
-  email     String   @unique
+  email     String     @unique
   password  String
+  role      Role       @default(USER)
+  status    Status     @default(ACTIVE)
+  isDeleted Boolean    @default(false)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
   image     String?
-  role      Role     @default(USER)
-  status    Status   @default(ACTIVE)
-  isDeleted Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  favorites Favorite[]
   recipes   Recipe[]
   reviews   Review[]
-  favorites Favorite[]
 
   @@index([email])
   @@map("users")
@@ -50,8 +33,7 @@ model Category {
   isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  recipes Recipe[]
+  recipes   Recipe[]
 
   @@map("categories")
 }
@@ -69,15 +51,12 @@ model Recipe {
   isDeleted            Boolean    @default(false)
   createdAt            DateTime   @default(now())
   updatedAt            DateTime   @updatedAt
-
-  authorId   String
-  author     User     @relation(fields: [authorId], references: [id])
-
-  categoryId String
-  category   Category @relation(fields: [categoryId], references: [id])
-
-  reviews     Review[]
-  favoritedBy Favorite[]
+  authorId             String
+  categoryId           String
+  favoritedBy          Favorite[]
+  author               User       @relation(fields: [authorId], references: [id])
+  category             Category   @relation(fields: [categoryId], references: [id])
+  reviews              Review[]
 
   @@index([authorId])
   @@index([categoryId])
@@ -94,12 +73,10 @@ model Review {
   isDeleted Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
-
-  recipeId String
-  recipe   Recipe @relation(fields: [recipeId], references: [id])
+  userId    String
+  recipeId  String
+  recipe    Recipe   @relation(fields: [recipeId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@index([userId])
   @@index([recipeId])
@@ -109,15 +86,29 @@ model Review {
 model Favorite {
   id        String   @id @default(uuid())
   createdAt DateTime @default(now())
-
-  userId String
-  user   User   @relation(fields: [userId], references: [id])
-
-  recipeId String
-  recipe   Recipe @relation(fields: [recipeId], references: [id])
+  userId    String
+  recipeId  String
+  recipe    Recipe   @relation(fields: [recipeId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
 
   @@unique([userId, recipeId])
   @@index([userId])
   @@index([recipeId])
   @@map("favorites")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum Status {
+  ACTIVE
+  INACTIVE
+  ARCHIVED
+}
+
+enum Visibility {
+  PUBLIC
+  PRIVATE
 }

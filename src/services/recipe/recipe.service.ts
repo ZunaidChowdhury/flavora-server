@@ -303,6 +303,47 @@ export const updateAdminVisibility = async (
   });
 };
 
+export const getAdminStats = async () => {
+  const [
+    totalUsers,
+    totalRecipes,
+    totalReviews,
+    totalCategories,
+    recipesByCategory,
+    categories,
+  ] = await Promise.all([
+    prisma.user.count({ where: { isDeleted: false } }),
+    prisma.recipe.count({ where: { isDeleted: false } }),
+    prisma.review.count({ where: { isDeleted: false } }),
+    prisma.category.count({ where: { isDeleted: false } }),
+    prisma.recipe.groupBy({
+      by: ["categoryId"],
+      where: { isDeleted: false },
+      _count: { _all: true },
+    }),
+    prisma.category.findMany({
+      where: { isDeleted: false },
+      select: { id: true, name: true },
+    }),
+  ]);
+
+  const nameById = new Map(categories.map((c) => [c.id, c.name]));
+  const byCategory = recipesByCategory
+    .map((row) => ({
+      name: nameById.get(row.categoryId) ?? "Unknown",
+      count: row._count._all,
+    }))
+    .sort((a, b) => b.count - a.count);
+
+  return {
+    totalUsers,
+    totalRecipes,
+    totalReviews,
+    totalCategories,
+    recipesByCategory: byCategory,
+  };
+};
+
 export const softDeleteRecipe = async (id: string) => {
   const existing = await prisma.recipe.findFirst({
     where: { id, isDeleted: false },
